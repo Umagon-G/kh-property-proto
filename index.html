@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>KH Property — 指でなぞって囲って探す（proto v0.6）</title>
+<title>KH Property — 指でなぞって囲って探す（proto v0.6.1）</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <style>
@@ -19,6 +19,8 @@
   .seg{display:flex;background:#12304a;border-radius:9px;padding:3px;width:max-content}
   .seg button{border:none;background:transparent;color:#cfe0ee;font-weight:800;font-size:12.5px;padding:6px 12px;border-radius:7px;cursor:pointer}
   .seg button.on{background:var(--amber);color:#1a1a1a}
+  .seg button.on::before{content:"✓";font-size:10px;margin-right:3px;opacity:.85}
+  .multi{color:#9FB3C8;font-size:10px;font-weight:700;border:1px dashed #2b4258;border-radius:999px;padding:2px 7px;flex:0 0 auto}
   .toolrow{display:flex;gap:8px;margin-top:9px;align-items:center}
   .tbtn{border:1px solid #2b4258;background:#12304a;color:#cfe0ee;border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
   .tbtn .n{color:var(--amber)}
@@ -63,6 +65,7 @@
   .opts{display:flex;flex-wrap:wrap;gap:8px}
   .opt{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--ink)}
   .opt.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .opt.on::before{content:"✓";font-size:10px;margin-right:4px;opacity:.9}
   .rng{display:flex;align-items:center;gap:10px} .rng input[type=range]{flex:1}
   .rngval{font-weight:800;color:var(--teal);min-width:92px;text-align:right;font-size:14px}
   .applybar{display:flex;gap:10px;margin-top:6px}
@@ -75,9 +78,9 @@
 <div id="app">
   <div id="left">
     <header>
-      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す（proto v0.6）</small></div>
-      <div class="segline"><span class="sl">取引</span><div class="seg" id="segDeal"><button data-deal="all" class="on">すべて</button><button data-deal="rent">賃貸</button><button data-deal="sale">売買</button></div></div>
-      <div class="segline"><span class="sl">用途</span><div class="seg" id="segUse"><button data-use="all" class="on">すべて</button><button data-use="res">住居</button><button data-use="biz">事業用</button><button data-use="land">土地</button></div></div>
+      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す（proto v0.6.1）</small></div>
+      <div class="segline"><span class="sl">取引</span><div class="seg" id="segDeal"><button data-deal="all" class="on">すべて</button><button data-deal="rent">賃貸</button><button data-deal="sale">売買</button></div><span class="multi">複数選択OK</span></div>
+      <div class="segline"><span class="sl">用途</span><div class="seg" id="segUse"><button data-use="all" class="on">すべて</button><button data-use="res">住居</button><button data-use="biz">事業用</button><button data-use="land">土地</button></div><span class="multi">複数選択OK</span></div>
       <div class="toolrow"><button class="tbtn" id="openFilter">⚙ 絞り込み <span class="n" id="fcnt"></span></button><button class="tbtn" id="resetAll">条件クリア</button></div>
     </header>
     <div id="sheet">
@@ -86,7 +89,7 @@
         <select id="sort"><option value="rec">おすすめ順</option><option value="pa">価格が安い順</option><option value="pd">価格が高い順</option><option value="ad">面積が広い順</option></select>
       </div>
       <div class="list" id="list"></div>
-      <div class="note">※ proto v0.6：物件=ランダム約1,500件のサンプル。地図=OpenStreetMap（後でGoogleマップ可）。Khmer24準拠＝取引(賃貸/売買)×用途(住居/事業用/土地)の2軸。円＝行政区域の件数。</div>
+      <div class="note">※ proto v0.6.1：物件=ランダム約1,500件のサンプル。地図=OpenStreetMap（後でGoogleマップ可）。Khmer24準拠＝取引(賃貸/売買)×用途(住居/事業用/土地)の2軸。円＝行政区域の件数。</div>
     </div>
   </div>
   <div id="mapwrap">
