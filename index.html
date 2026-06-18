@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>KH Property — 指でなぞって囲って探す（proto v0.5）</title>
+<title>KH Property — 指でなぞって囲って探す（proto v0.6）</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <style>
@@ -75,7 +75,7 @@
 <div id="app">
   <div id="left">
     <header>
-      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す（proto v0.5）</small></div>
+      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す（proto v0.6）</small></div>
       <div class="segline"><span class="sl">取引</span><div class="seg" id="segDeal"><button data-deal="all" class="on">すべて</button><button data-deal="rent">賃貸</button><button data-deal="sale">売買</button></div></div>
       <div class="segline"><span class="sl">用途</span><div class="seg" id="segUse"><button data-use="all" class="on">すべて</button><button data-use="res">住居</button><button data-use="biz">事業用</button><button data-use="land">土地</button></div></div>
       <div class="toolrow"><button class="tbtn" id="openFilter">⚙ 絞り込み <span class="n" id="fcnt"></span></button><button class="tbtn" id="resetAll">条件クリア</button></div>
@@ -86,7 +86,7 @@
         <select id="sort"><option value="rec">おすすめ順</option><option value="pa">価格が安い順</option><option value="pd">価格が高い順</option><option value="ad">面積が広い順</option></select>
       </div>
       <div class="list" id="list"></div>
-      <div class="note">※ proto v0.5：物件=ランダム約1,500件のサンプル。地図=OpenStreetMap（後でGoogleマップ可）。Khmer24準拠＝取引(賃貸/売買)×用途(住居/事業用/土地)の2軸。円＝行政区域の件数。</div>
+      <div class="note">※ proto v0.6：物件=ランダム約1,500件のサンプル。地図=OpenStreetMap（後でGoogleマップ可）。Khmer24準拠＝取引(賃貸/売買)×用途(住居/事業用/土地)の2軸。円＝行政区域の件数。</div>
     </div>
   </div>
   <div id="mapwrap">
@@ -101,9 +101,9 @@
 <div id="scrim"></div>
 <div id="filter">
   <h3>絞り込み条件</h3>
-  <div class="frow"><label>取引</label><div class="opts" id="fDeal"><div class="opt on" data-deal="all">すべて</div><div class="opt" data-deal="rent">賃貸</div><div class="opt" data-deal="sale">売買</div></div></div>
-  <div class="frow"><label>用途</label><div class="opts" id="fUse"><div class="opt on" data-use="all">すべて</div><div class="opt" data-use="res">住居</div><div class="opt" data-use="biz">事業用</div><div class="opt" data-use="land">土地</div></div></div>
-  <div class="frow"><label>物件タイプ</label><div class="opts" id="fType"><div class="opt on" data-t="all">すべて</div><div class="opt" data-t="一軒家">一軒家</div><div class="opt" data-t="ヴィラ">ヴィラ</div><div class="opt" data-t="アパート">アパート</div><div class="opt" data-t="コンド">コンド</div><div class="opt" data-t="スタジオ">スタジオ</div><div class="opt" data-t="オフィス">オフィス</div><div class="opt" data-t="店舗">店舗</div><div class="opt" data-t="ショップハウス">ショップハウス</div><div class="opt" data-t="倉庫">倉庫</div><div class="opt" data-t="土地">土地</div></div></div>
+  <div class="frow"><label>取引（複数選択可）</label><div class="opts" id="fDeal"><div class="opt on" data-deal="all">すべて</div><div class="opt" data-deal="rent">賃貸</div><div class="opt" data-deal="sale">売買</div></div></div>
+  <div class="frow"><label>用途（複数選択可）</label><div class="opts" id="fUse"><div class="opt on" data-use="all">すべて</div><div class="opt" data-use="res">住居</div><div class="opt" data-use="biz">事業用</div><div class="opt" data-use="land">土地</div></div></div>
+  <div class="frow"><label>物件タイプ（複数選択可）</label><div class="opts" id="fType"><div class="opt on" data-ptype="all">すべて</div><div class="opt" data-ptype="一軒家">一軒家</div><div class="opt" data-ptype="ヴィラ">ヴィラ</div><div class="opt" data-ptype="アパート">アパート</div><div class="opt" data-ptype="コンド">コンド</div><div class="opt" data-ptype="スタジオ">スタジオ</div><div class="opt" data-ptype="オフィス">オフィス</div><div class="opt" data-ptype="店舗">店舗</div><div class="opt" data-ptype="ショップハウス">ショップハウス</div><div class="opt" data-ptype="倉庫">倉庫</div><div class="opt" data-ptype="土地">土地</div></div></div>
   <div class="frow"><label>価格の上限（賃貸=月/売買=総額）</label><div class="rng"><input type="range" id="fPrice" min="0" max="100" step="1" value="100"><span class="rngval" id="fPriceV">上限なし</span></div></div>
   <div class="frow"><label>専有面積の最低（㎡）</label><div class="rng"><input type="range" id="fArea" min="0" max="500" step="10" value="0"><span class="rngval" id="fAreaV">指定なし</span></div></div>
   <div class="frow"><label>こだわり条件</label><div class="opts" id="fFlags"><div class="opt" data-k="ver">✓ 検証済み</div><div class="opt" data-k="tax">税インボイス可</div><div class="opt" data-k="meter">専用メーター</div><div class="opt" data-k="fixed">賃料固定</div></div></div>
@@ -142,7 +142,8 @@ DISTRICTS.forEach(d=>{const cnt=d.n*MULT;for(let i=0;i<cnt;i++){id++;
     use,deal,price,saleP,dep,term,fixed,meter:rnd()<(use==="land"?.2:.65)?1:0,tax:(use==="biz")?(rnd()<.7?1:0):(rnd()<.2?1:0),m2,ver:rnd()<(use==="biz"?.45:.3)?1:0});
 }});
 const COL={res:"#1d4ed8",biz:"#0E7C86",land:"#0E9F6E"};
-const F={deal:"all",use:"all",ptype:"all",priceMax:1e12,areaMin:0,ver:0,tax:0,meter:0,fixed:0};
+const F={priceMax:1e12,areaMin:0,ver:0,tax:0,meter:0,fixed:0};
+const SETS={deal:new Set(),use:new Set(),ptype:new Set()};
 const LIST_CAP=80;
 let area=null,sortKey="rec";
 const map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([11.5520,104.9150],12);
@@ -156,9 +157,9 @@ const cluster=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:5
 }).addTo(map);
 const val=p=>p.deal==='sale'?p.saleP:p.price;
 function passFilter(p){
-  if(F.deal!=="all"&&p.deal!==F.deal)return false;
-  if(F.use!=="all"&&p.use!==F.use)return false;
-  if(F.ptype!=="all"&&p.ptype!==F.ptype)return false;
+  if(SETS.deal.size&&!SETS.deal.has(p.deal))return false;
+  if(SETS.use.size&&!SETS.use.has(p.use))return false;
+  if(SETS.ptype.size&&!SETS.ptype.has(p.ptype))return false;
   if(val(p)>F.priceMax)return false;
   if(p.m2<F.areaMin)return false;
   if(F.ver&&!p.ver)return false;if(F.tax&&!p.tax)return false;if(F.meter&&!p.meter)return false;if(F.fixed&&!p.fixed)return false;
@@ -167,7 +168,7 @@ function passFilter(p){
 function inArea(p){return area?turf.booleanPointInPolygon(turf.point([p.lng,p.lat]),area):true;}
 function visible(){return P.filter(p=>passFilter(p)&&inArea(p));}
 function sortVis(a){const k=sortKey;return a.sort((x,y)=>k==="pa"?val(x)-val(y):k==="pd"?val(y)-val(x):k==="ad"?y.m2-x.m2:((y.ver-x.ver)||(val(x)-val(y))));}
-function activeFlags(){return ["ver","tax","meter","fixed"].filter(k=>F[k]).length+(F.priceMax<1e12?1:0)+(F.areaMin>0?1:0)+(F.ptype!=="all"?1:0);}
+function activeFlags(){return ["ver","tax","meter","fixed"].filter(k=>F[k]).length+(F.priceMax<1e12?1:0)+(F.areaMin>0?1:0)+(SETS.deal.size?1:0)+(SETS.use.size?1:0)+(SETS.ptype.size?1:0);}
 function countF(){return P.filter(passFilter).length;}
 function priceHTML(p){return p.deal==='sale'?('<div class="price">$'+p.saleP.toLocaleString()+'<small> 売買・総額</small></div>'):('<div class="price">$'+p.price.toLocaleString()+'<small> /月（最終・税別）</small></div>');}
 function renderMarkers(vis){
@@ -196,9 +197,11 @@ function renderList(vis){
 function render(){const vis=visible();renderMarkers(vis);renderList(vis.slice());}
 function focusP(lat,lng){map.setView([lat,lng],16,{animate:true});}window.focusP=focusP;
 document.getElementById('sort').onchange=e=>{sortKey=e.target.value;renderList(visible());document.getElementById('list').scrollTop=0;};
-document.getElementById('segDeal').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#segDeal button').forEach(x=>x.classList.remove('on'));b.classList.add('on');F.deal=b.dataset.deal;syncOpt('fDeal','deal',F.deal);render();});
-document.getElementById('segUse').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#segUse button').forEach(x=>x.classList.remove('on'));b.classList.add('on');F.use=b.dataset.use;syncOpt('fUse','use',F.use);render();});
-function syncOpt(id,attr,v){document.querySelectorAll('#'+id+' .opt').forEach(o=>o.classList.toggle('on',o.dataset[attr]===v));}
+// 複数選択: 各軸はSet。"all"=クリア(全表示)、個別はトグルでON/OFF。ヘッダー(seg)とパネル(opt)は同じSetを共有・同期。
+function applyMultiClass(attr){const s=SETS[attr];document.querySelectorAll('[data-'+attr+']').forEach(el=>{const v=el.dataset[attr];el.classList.toggle('on', v==='all'? s.size===0 : s.has(v));});}
+function handleMulti(attr,v){const s=SETS[attr];if(v==='all')s.clear();else{s.has(v)?s.delete(v):s.add(v);}applyMultiClass(attr);render();updateApplyCnt();}
+function bindMulti(id,attr){document.getElementById(id).addEventListener('click',e=>{const t=e.target.closest('[data-'+attr+']');if(!t)return;handleMulti(attr,t.dataset[attr]);});}
+bindMulti('segDeal','deal');bindMulti('segUse','use');bindMulti('fDeal','deal');bindMulti('fUse','use');bindMulti('fType','ptype');
 
 let fh=false,pts=[],line=null;const el=map.getContainer();
 function setFH(on){fh=on;const b=document.getElementById('fhBtn');b.classList.toggle('on',on);b.textContent=on?"✍ なぞって描く（ドラッグ）":"✍ 指でなぞって囲む";document.getElementById('tip').style.display=on?'block':'none';if(on){map.dragging.disable();map.doubleClickZoom.disable();el.style.cursor='crosshair';el.style.touchAction='none';}else{map.dragging.enable();map.doubleClickZoom.enable();el.style.cursor='';el.style.touchAction='';}}
@@ -215,20 +218,18 @@ document.getElementById('clearBtn').onclick=()=>{drawn.clearLayers();area=null;d
 const scrim=document.getElementById('scrim'),fd=document.getElementById('filter');
 function openF(){updateApplyCnt();fd.classList.add('open');scrim.classList.add('open');}function closeF(){fd.classList.remove('open');scrim.classList.remove('open');}
 document.getElementById('openFilter').onclick=openF;scrim.onclick=closeF;
-document.getElementById('fDeal').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;F.deal=o.dataset.deal;syncOpt('fDeal','deal',F.deal);document.querySelectorAll('#segDeal button').forEach(b=>b.classList.toggle('on',b.dataset.deal===F.deal));updateApplyCnt();});
-document.getElementById('fUse').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;F.use=o.dataset.use;syncOpt('fUse','use',F.use);document.querySelectorAll('#segUse button').forEach(b=>b.classList.toggle('on',b.dataset.use===F.use));updateApplyCnt();});
-document.getElementById('fType').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;F.ptype=o.dataset.t;syncOpt('fType','t',F.ptype);updateApplyCnt();});
-document.getElementById('fFlags').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;o.classList.toggle('on');F[o.dataset.k]=o.classList.contains('on')?1:0;updateApplyCnt();});
-const fp=document.getElementById('fPrice');fp.oninput=()=>{const v=+fp.value;F.priceMax=v>=100?1e12:(v<=30?v*100:(3000+(v-30)*((900000-3000)/70)));document.getElementById('fPriceV').textContent=v>=100?"上限なし":(F.priceMax<3500?("月$"+Math.round(F.priceMax).toLocaleString()):("総額$"+Math.round(F.priceMax/1000)+"k"));updateApplyCnt();};
-const fa=document.getElementById('fArea');fa.oninput=()=>{F.areaMin=+fa.value;document.getElementById('fAreaV').textContent=(+fa.value===0)?"指定なし":(fa.value+"㎡〜");updateApplyCnt();};
+// こだわり条件(複数選択・既存)＝即反映
+document.getElementById('fFlags').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;o.classList.toggle('on');F[o.dataset.k]=o.classList.contains('on')?1:0;render();updateApplyCnt();});
+// スライダー: ドラッグ中は件数のみ更新、離した時に地図反映(重い再描画を抑制)
+const fp=document.getElementById('fPrice');fp.oninput=()=>{const v=+fp.value;F.priceMax=v>=100?1e12:(v<=30?v*100:(3000+(v-30)*((900000-3000)/70)));document.getElementById('fPriceV').textContent=v>=100?"上限なし":(F.priceMax<3500?("月$"+Math.round(F.priceMax).toLocaleString()):("総額$"+Math.round(F.priceMax/1000)+"k"));updateApplyCnt();};fp.onchange=()=>render();
+const fa=document.getElementById('fArea');fa.oninput=()=>{F.areaMin=+fa.value;document.getElementById('fAreaV').textContent=(+fa.value===0)?"指定なし":(fa.value+"㎡〜");updateApplyCnt();};fa.onchange=()=>render();
 function updateApplyCnt(){document.getElementById('fApplyCnt').textContent=countF().toLocaleString();}
 document.getElementById('fApply').onclick=()=>{closeF();render();};
 document.getElementById('fClear').onclick=()=>resetAll();document.getElementById('resetAll').onclick=()=>resetAll();
-function resetAll(){F.deal="all";F.use="all";F.ptype="all";F.priceMax=1e12;F.areaMin=0;F.ver=F.tax=F.meter=F.fixed=0;
-  syncOpt('fDeal','deal','all');syncOpt('fUse','use','all');syncOpt('fType','t','all');document.querySelectorAll('#fFlags .opt').forEach(o=>o.classList.remove('on'));
-  document.querySelectorAll('#segDeal button').forEach(b=>b.classList.toggle('on',b.dataset.deal==="all"));document.querySelectorAll('#segUse button').forEach(b=>b.classList.toggle('on',b.dataset.use==="all"));
+function resetAll(){SETS.deal.clear();SETS.use.clear();SETS.ptype.clear();F.priceMax=1e12;F.areaMin=0;F.ver=F.tax=F.meter=F.fixed=0;
+  applyMultiClass('deal');applyMultiClass('use');applyMultiClass('ptype');document.querySelectorAll('#fFlags .opt').forEach(o=>o.classList.remove('on'));
   fp.value=100;document.getElementById('fPriceV').textContent="上限なし";fa.value=0;document.getElementById('fAreaV').textContent="指定なし";updateApplyCnt();render();}
-render();updateApplyCnt();
+applyMultiClass('deal');applyMultiClass('use');applyMultiClass('ptype');render();updateApplyCnt();
 </script>
 </body>
 </html>
