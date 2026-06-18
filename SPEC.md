@@ -127,6 +127,9 @@ git add -A && git commit -m "vX.Y: 変更点" && git push   # ライブが自動
 4. 独自ドメイン移設（bellfoods.com.kh or Kangi 独自ドメイン）
 5. なぞり線のスムージング
 
+## 7.5 本番MVP設計書
+本プロト(使い捨て)とは別に、本番MVP(Next.js+Supabase)の統合アーキテクチャ設計書を **[SPEC_MVP.md](SPEC_MVP.md)** に作成済(2026-06-18)。データモデル(gate強制をDB層trigger/CHECKで物理強制)・リポ構成・供給サイドUXフロー・規制整合・4週マイルストン・確定設計42件・白石判断事項27件を収録。
+
 ## 8. 関連ドキュメント（事業の本体）
 - 競合・戦略リサーチ正本: `workspace-config/sessions/2026-06-17_property_platform_research.md`（§7g にプロト記載）
 - 事業計画書(10章): `workspace-config/sessions/2026-06-17_property_platform_BIZPLAN.md`
