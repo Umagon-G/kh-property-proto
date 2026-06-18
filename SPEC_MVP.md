@@ -842,6 +842,34 @@ cold-startの肝: B1+B2で「最初から30件gate充足物件が見える状態
 
 ---
 
+## 9. 集客エンジン「不動産AI」との統合（2026-06-18 確定）
+
+並走セッション**不動産AI**（PR #10 `claude/real-estate-ai-automation-12nOL`）のhandoffを統合。**両者は重複でなく二枚看板の補完**。不動産AI側は403でPF実物を確認できず④を確度60%で残したが、本セッションがPF実物(v0.7)を保持しているため**確度95%で確定**。
+
+### 9.1 二枚看板（役割分担）
+| | 不動産PF（本書） | 不動産AI（PR #10） |
+|---|---|---|
+| 役割 | 構造化マーケットプレイス＝着地先＋供給DB | アウトバウンド営業エンジン |
+| 漏斗 | 中〜下（検索→詳細→問い合わせ→[人間]内見/成約） | 上（FB"家探し"検出→即DM→Telegram qualify→マッチ） |
+| 在庫 | エージェントがKYC後にgate必須で登録 | 提携エージェント在庫を流用 |
+| 技術 | 新規 `kh-property`（Next.js+Supabase） | 既存 `bfc-bots`(Telegram)+`bfc-playbook-api`(CF Workers)に不動産profile追加 |
+| 自動化 | gate強制・検索・問い合わせ応答 | 検出→DM→qualify→マッチ（漏斗上80%） |
+
+### 9.2 つなぎ目（一本の漏斗になる）
+不動産AI botの**送客先＝不動産PFの構造化物件ページ**。botが口説く「提携エージェント」＝**PFのKYC登録エージェントと同一人物**。→ bot=acquisition、PF=conversion+supply。同じ提携エージェント網を共有し、botがPFの集客チャネルになる。
+
+### 9.3 技術の住み分けと将来統合
+- 短期: 不動産AIは既存bot基盤に乗る（新規DB不要・即PoC可）／不動産PFは新規Supabase。
+- 将来統合: botのqualifyログ→PFの`inquiries`、提携エージェント→PFの`agents`、bot提示在庫→PFの`listings`、で一本化。
+
+### 9.4 規制スタンスの整合（重要）
+- 両セッション一致: Prakas 064で**無免許の広告活動は罰金$1,250–2,500**。
+- 白石の文書化済み判断（不動産AI handoff）: 摘発ゆるい現状→**免許は棚上げ、当たれば$125仲介免許で後追い取得（バックストップ）**。
+- → 本MVPのG0-aブロッカーが軽くなる: 「免許前は公開不可」ではなく「**無料クローズドβで供給を貯める＋$125は安いバックストップ**」。
+- 残る本丸: **PFの掲載課金（＝広告対価の収受）** がPrakas 064トリガー確率が最も高い。**ここだけG0-a弁護士確認を残す**。botの仲介コミッションは$125免許で安く正規化できる。
+
+---
+
 ## 付録A. 確定した設計判断（全42件）
 - gate強制はアプリ層でなくDB層: listing_status ENUM の published 遷移時にトリガー fn_listing_gate_complete が全Universal gate+業種モジュール必須項目+agent KYC verified を検査しNULL/未充足なら RAISE EXCEPTION。直API/管理画面もバイパス不可＝design-protection の最深層
 - Universal必須gate(賃料/デポ/契約年数/専用メーター/VATインボイス可否/面積/入居日 等)は物理カラムで保持(JSONBに逃がさない)。理由=published時のNOT NULL/CHECK制約は物理列にしか刺さらない。可変な業種別モジュールだけ JSONB(listing_business_modules)に分離
