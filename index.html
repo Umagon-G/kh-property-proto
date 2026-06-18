@@ -3,20 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>KH Property — 指でなぞって囲って探す（proto v0.4）</title>
+<title>KH Property — 指でなぞって囲って探す（proto v0.5）</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <style>
-  :root{--navy:#0B2138;--teal:#0E7C86;--amber:#F4A300;--ink:#1E293B;--mute:#64748B;
-        --line:#E2E8F0;--panel:#F1F5F9;--ok:#0E9F6E;--bad:#C0263A;--white:#fff;}
+  :root{--navy:#0B2138;--teal:#0E7C86;--blue:#1d4ed8;--green:#0E9F6E;--amber:#F4A300;--ink:#1E293B;--mute:#64748B;--line:#E2E8F0;--panel:#F1F5F9;--bad:#C0263A;}
   *{box-sizing:border-box} html,body{margin:0;height:100%;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;color:var(--ink)}
   #app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
   header{background:var(--navy);color:#fff;padding:10px 14px;flex:0 0 auto;z-index:1200}
   .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px}
   .brand .dot{width:10px;height:18px;background:var(--amber);border-radius:2px}
   .brand small{font-weight:500;color:#9FB3C8;font-size:11px;margin-left:6px}
-  .seg{display:flex;margin-top:9px;background:#12304a;border-radius:10px;padding:3px;width:max-content}
-  .seg button{border:none;background:transparent;color:#cfe0ee;font-weight:800;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer}
+  .segline{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .sl{color:#9FB3C8;font-size:11px;font-weight:800;width:26px;flex:0 0 auto}
+  .seg{display:flex;background:#12304a;border-radius:9px;padding:3px;width:max-content}
+  .seg button{border:none;background:transparent;color:#cfe0ee;font-weight:800;font-size:12.5px;padding:6px 12px;border-radius:7px;cursor:pointer}
   .seg button.on{background:var(--amber);color:#1a1a1a}
   .toolrow{display:flex;gap:8px;margin-top:9px;align-items:center}
   .tbtn{border:1px solid #2b4258;background:#12304a;color:#cfe0ee;border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
@@ -30,50 +31,53 @@
   #clearBtn{left:12px;bottom:14px;background:#fff;color:var(--bad);border:1px solid var(--line)!important;padding:11px 14px;font-size:13px;display:none}
   .tip{position:absolute;z-index:1100;left:50%;transform:translateX(-50%);top:12px;background:rgba(11,33,56,.92);color:#fff;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;display:none}
   .legend{position:absolute;z-index:1100;top:12px;right:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;box-shadow:0 4px 12px rgba(11,33,56,.15)}
-  .legend div{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:11.5px;font-weight:700;color:var(--ink)}
-  .legend i{width:11px;height:11px;border-radius:50%;display:inline-block}
-  /* cluster bubble: unified navy, number + district name */
+  .legend div{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:11px;font-weight:700;color:var(--ink)}
+  .legend i{width:11px;height:11px;border-radius:50%;display:inline-block} .legend i.ring{background:#fff;border:2px solid var(--amber)}
   .cl{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:50%;color:#fff;border:3px solid rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(11,33,56,.35);line-height:1}
-  .cl .cn{font-weight:800;font-size:18px} .cl .cd{font-size:9px;opacity:.92;margin-top:2px;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #sheet{flex:0 0 auto;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(11,33,56,.1);max-height:46dvh;display:flex;flex-direction:column}
-  .sheet-h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);gap:8px}
+  .cl .cn{font-weight:800;font-size:17px} .cl .cd{font-size:9px;opacity:.92;margin-top:2px;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #sheet{flex:0 0 auto;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(11,33,56,.1);max-height:46dvh;display:flex;flex-direction:column;min-height:0}
+  .sheet-h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);gap:8px;flex:0 0 auto}
   .sheet-h b{font-size:15px} .sheet-h .cnt{color:var(--teal);font-weight:800}
   .sheet-h select{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12.5px;font-weight:700;color:var(--ink);background:#fff}
-  .list{overflow:auto;padding:10px 12px;display:grid;grid-template-columns:1fr;gap:10px}
+  .list{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px;display:grid;grid-template-columns:1fr;gap:10px}
   .card{display:grid;grid-template-columns:84px 1fr;gap:11px;border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;background:#fff}
-  .thumb{width:84px;height:84px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;text-align:center;line-height:1.2}
+  .thumb{width:84px;height:84px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;text-align:center;line-height:1.2;padding:4px}
   .ttl{font-weight:800;font-size:14px;margin:0 0 3px} .addr{color:var(--mute);font-size:11.5px;margin:0 0 5px}
   .badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
   .b{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 7px}
-  .b.biz{background:#e7eefc;color:#1d4ed8} .b.res{background:#eafaf1;color:#0e9f6e} .b.sale{background:#fdeccf;color:#9a6700} .b.ver{background:#fff4d6;color:#9a6700} .b.ver::before{content:"✓ "}
+  .b.rent{background:#e7f6f3;color:#0b6e5e} .b.sale{background:#fdeccf;color:#9a6700}
+  .b.res{background:#e7eefc;color:#1d4ed8} .b.biz{background:#e3f1f2;color:#0b6e6e} .b.land{background:#e7f7ee;color:#0e7a52}
+  .b.ver{background:#fff4d6;color:#9a6700} .b.ver::before{content:"✓ "}
   .price{font-weight:900;font-size:18px;color:var(--navy)} .price small{font-size:11px;color:var(--mute);font-weight:700}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin-top:5px}
   .kv{font-size:11.5px;display:flex;justify-content:space-between;border-bottom:1px dotted #e7ecf2;padding:1px 0}
-  .kv span:first-child{color:var(--mute)} .kv b{font-weight:800} .yes{color:var(--ok)} .no{color:var(--bad)}
+  .kv span:first-child{color:var(--mute)} .kv b{font-weight:800} .yes{color:var(--green)} .no{color:var(--bad)}
+  .more{text-align:center;color:var(--mute);font-size:12px;padding:8px}
   .empty{color:var(--mute);text-align:center;padding:26px 10px;font-size:13px}
-  .note{font-size:10.5px;color:var(--mute);padding:6px 14px;background:var(--panel)}
+  .note{font-size:10.5px;color:var(--mute);padding:6px 14px;background:var(--panel);flex:0 0 auto}
   #scrim{position:fixed;inset:0;background:rgba(11,33,56,.45);z-index:1300;display:none}
   #filter{position:fixed;z-index:1400;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;padding:16px 18px 20px;box-shadow:0 -10px 30px rgba(11,33,56,.25);transform:translateY(100%);transition:transform .22s;max-height:80dvh;overflow:auto}
   #filter.open{transform:translateY(0)} #scrim.open{display:block}
   #filter h3{margin:2px 0 12px;font-size:17px}
   .frow{margin-bottom:15px} .frow label{font-size:13px;font-weight:800;display:block;margin-bottom:7px}
   .opts{display:flex;flex-wrap:wrap;gap:8px}
-  .opt{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink)}
+  .opt{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--ink)}
   .opt.on{background:var(--navy);color:#fff;border-color:var(--navy)}
   .rng{display:flex;align-items:center;gap:10px} .rng input[type=range]{flex:1}
-  .rngval{font-weight:800;color:var(--teal);min-width:88px;text-align:right;font-size:14px}
+  .rngval{font-weight:800;color:var(--teal);min-width:92px;text-align:right;font-size:14px}
   .applybar{display:flex;gap:10px;margin-top:6px}
   .applybar .clr{background:#fff;border:1px solid var(--line);color:var(--mute);border-radius:10px;padding:13px 16px;font-weight:800;cursor:pointer}
   .applybar .ap{flex:1;background:var(--teal);border:none;color:#fff;border-radius:10px;padding:13px;font-weight:800;font-size:15px;cursor:pointer}
-  @media(min-width:880px){#app{flex-direction:row}#left{flex:0 0 440px;display:flex;flex-direction:column;border-right:1px solid var(--line);height:100dvh}header{order:0}#sheet{order:1;flex:1 1 auto;max-height:none;border-top:none}#mapwrap{order:2;flex:1 1 auto}#filter{left:auto;width:440px;border-radius:0}}
+  @media(min-width:880px){#app{flex-direction:row}#left{flex:0 0 444px;display:flex;flex-direction:column;border-right:1px solid var(--line);height:100dvh;min-height:0}header{order:0}#sheet{order:1;flex:1 1 auto;max-height:none;border-top:none;min-height:0}#mapwrap{order:2;flex:1 1 auto}#filter{left:auto;width:444px;border-radius:0}}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="left">
     <header>
-      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す・全条件が最初から出る（proto v0.4）</small></div>
-      <div class="seg" id="seg"><button data-u="all" class="on">すべて</button><button data-u="biz">事業用</button><button data-u="res">住居</button><button data-u="sale">売買</button></div>
+      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す（proto v0.5）</small></div>
+      <div class="segline"><span class="sl">取引</span><div class="seg" id="segDeal"><button data-deal="all" class="on">すべて</button><button data-deal="rent">賃貸</button><button data-deal="sale">売買</button></div></div>
+      <div class="segline"><span class="sl">用途</span><div class="seg" id="segUse"><button data-use="all" class="on">すべて</button><button data-use="res">住居</button><button data-use="biz">事業用</button><button data-use="land">土地</button></div></div>
       <div class="toolrow"><button class="tbtn" id="openFilter">⚙ 絞り込み <span class="n" id="fcnt"></span></button><button class="tbtn" id="resetAll">条件クリア</button></div>
     </header>
     <div id="sheet">
@@ -82,12 +86,12 @@
         <select id="sort"><option value="rec">おすすめ順</option><option value="pa">価格が安い順</option><option value="pd">価格が高い順</option><option value="ad">面積が広い順</option></select>
       </div>
       <div class="list" id="list"></div>
-      <div class="note">※ proto v0.4：物件=ランダム約100件のサンプル。地図=OpenStreetMap（後でGoogleマップ可）。円＝行政区域ごとの物件数（数字＝件数）。</div>
+      <div class="note">※ proto v0.5：物件=ランダム約1,500件のサンプル。地図=OpenStreetMap（後でGoogleマップ可）。Khmer24準拠＝取引(賃貸/売買)×用途(住居/事業用/土地)の2軸。円＝行政区域の件数。</div>
     </div>
   </div>
   <div id="mapwrap">
     <div id="map"></div>
-    <div class="legend"><div><i style="background:#0E7C86"></i>事業用（賃貸）</div><div><i style="background:#1d4ed8"></i>住居（賃貸）</div><div><i style="background:#F4A300"></i>売買</div></div>
+    <div class="legend"><div><i style="background:#1d4ed8"></i>住居</div><div><i style="background:#0E7C86"></i>事業用</div><div><i style="background:#0E9F6E"></i>土地</div><div><i class="ring"></i>太枠＝売買</div></div>
     <div class="tip" id="tip">指でなぞって輪を描いてください ✍</div>
     <button class="fab" id="fhBtn">✍ 指でなぞって囲む</button>
     <button class="fab" id="demoBtn">デモエリア</button>
@@ -97,10 +101,11 @@
 <div id="scrim"></div>
 <div id="filter">
   <h3>絞り込み条件</h3>
-  <div class="frow"><label>用途・取引</label><div class="opts" id="fUse"><div class="opt on" data-u="all">すべて</div><div class="opt" data-u="biz">事業用(賃貸)</div><div class="opt" data-u="res">住居(賃貸)</div><div class="opt" data-u="sale">売買</div></div></div>
-  <div class="frow"><label>価格の上限（USD：賃貸=月/売買=総額）</label><div class="rng"><input type="range" id="fPrice" min="0" max="100" step="1" value="100"><span class="rngval" id="fPriceV">上限なし</span></div></div>
-  <div class="frow"><label>専有面積の最低（㎡）</label><div class="rng"><input type="range" id="fArea" min="0" max="400" step="10" value="0"><span class="rngval" id="fAreaV">指定なし</span></div></div>
-  <div class="frow"><label>デポジット上限（賃貸）</label><div class="opts" id="fDep"><div class="opt on" data-d="9">指定なし</div><div class="opt" data-d="1">1ヶ月</div><div class="opt" data-d="2">2ヶ月以下</div><div class="opt" data-d="3">3ヶ月以下</div></div></div>
+  <div class="frow"><label>取引</label><div class="opts" id="fDeal"><div class="opt on" data-deal="all">すべて</div><div class="opt" data-deal="rent">賃貸</div><div class="opt" data-deal="sale">売買</div></div></div>
+  <div class="frow"><label>用途</label><div class="opts" id="fUse"><div class="opt on" data-use="all">すべて</div><div class="opt" data-use="res">住居</div><div class="opt" data-use="biz">事業用</div><div class="opt" data-use="land">土地</div></div></div>
+  <div class="frow"><label>物件タイプ</label><div class="opts" id="fType"><div class="opt on" data-t="all">すべて</div><div class="opt" data-t="一軒家">一軒家</div><div class="opt" data-t="ヴィラ">ヴィラ</div><div class="opt" data-t="アパート">アパート</div><div class="opt" data-t="コンド">コンド</div><div class="opt" data-t="スタジオ">スタジオ</div><div class="opt" data-t="オフィス">オフィス</div><div class="opt" data-t="店舗">店舗</div><div class="opt" data-t="ショップハウス">ショップハウス</div><div class="opt" data-t="倉庫">倉庫</div><div class="opt" data-t="土地">土地</div></div></div>
+  <div class="frow"><label>価格の上限（賃貸=月/売買=総額）</label><div class="rng"><input type="range" id="fPrice" min="0" max="100" step="1" value="100"><span class="rngval" id="fPriceV">上限なし</span></div></div>
+  <div class="frow"><label>専有面積の最低（㎡）</label><div class="rng"><input type="range" id="fArea" min="0" max="500" step="10" value="0"><span class="rngval" id="fAreaV">指定なし</span></div></div>
   <div class="frow"><label>こだわり条件</label><div class="opts" id="fFlags"><div class="opt" data-k="ver">✓ 検証済み</div><div class="opt" data-k="tax">税インボイス可</div><div class="opt" data-k="meter">専用メーター</div><div class="opt" data-k="fixed">賃料固定</div></div></div>
   <div class="applybar"><button class="clr" id="fClear">クリア</button><button class="ap" id="fApply">この条件で見る（<span id="fApplyCnt">0</span>件）</button></div>
 </div>
@@ -113,74 +118,87 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 const rnd=mulberry32(20260618);
 const rb=(a,b)=>a+rnd()*(b-a), ri=(a,b)=>Math.floor(rb(a,b+0.999)), pick=a=>a[Math.floor(rnd()*a.length)];
 const DISTRICTS=[
- {name:"BKK1",lat:11.5490,lng:104.9220,n:18,biz:.5},{name:"Chamkarmon",lat:11.5420,lng:104.9180,n:16,biz:.5},
+ {name:"BKK1",lat:11.5490,lng:104.9220,n:18,biz:.45},{name:"Chamkarmon",lat:11.5420,lng:104.9180,n:16,biz:.45},
  {name:"Toul Tom Poung",lat:11.5380,lng:104.9150,n:14,biz:.4},{name:"Tonle Bassac",lat:11.5540,lng:104.9290,n:12,biz:.35},
- {name:"Daun Penh",lat:11.5710,lng:104.9230,n:12,biz:.55},{name:"Toul Kork",lat:11.5720,lng:104.9000,n:10,biz:.3},
- {name:"BKK3",lat:11.5450,lng:104.9170,n:8,biz:.4},{name:"Sen Sok",lat:11.5980,lng:104.8850,n:8,biz:.4},
- {name:"Mean Chey",lat:11.5170,lng:104.9230,n:6,biz:.6},
+ {name:"Daun Penh",lat:11.5710,lng:104.9230,n:12,biz:.5},{name:"Toul Kork",lat:11.5720,lng:104.9000,n:11,biz:.3},
+ {name:"BKK3",lat:11.5450,lng:104.9170,n:9,biz:.4},{name:"Sen Sok",lat:11.5980,lng:104.8850,n:9,biz:.4},
+ {name:"Mean Chey",lat:11.5170,lng:104.9230,n:7,biz:.55},{name:"Chroy Changvar",lat:11.5870,lng:104.9300,n:8,biz:.3},
 ];
-const BIZUSE=["オフィス","店舗","倉庫","倉庫付事業","飲食区画","医療区画"], RESUSE=["アパート","コンド","ヴィラ","スタジオ","一軒家"];
+const MULT=15;
+const RES_T=["一軒家","ヴィラ","アパート","コンド","スタジオ"], BIZ_T=["オフィス","店舗","ショップハウス","倉庫"];
 let P=[],id=0;
-DISTRICTS.forEach(d=>{for(let i=0;i<d.n;i++){id++;
-  const biz=rnd()<d.biz, use=biz?pick(BIZUSE):pick(RESUSE), m2=biz?ri(60,400):ri(28,260), sale=rnd()<0.15;
-  let price=biz?Math.round((400+m2*rb(4,9))/50)*50:Math.round((180+m2*rb(3,7))/10)*10; price=Math.max(200,Math.min(2600,price));
-  const saleP=Math.round(m2*rb(900,2600)/1000)*1000;
-  const dep=biz?pick([2,2,3,3]):pick([1,1,2]), fixed=biz?(rnd()<.6?1:0):0;
-  const term=fixed?pick(["2年・固定","3年・固定","5年・固定"]):(biz?pick(["2年","3年"]):"1年");
-  P.push({id,t:use+" "+m2+"㎡",dist:d.name,area:d.name+" / St."+ri(10,600),lat:d.lat+rb(-.012,.012),lng:d.lng+rb(-.014,.014),
-    type:biz?"biz":"res",deal:sale?"sale":"rent",cat:sale?"sale":(biz?"biz":"res"),use,price,saleP,dep,term,fixed,
-    meter:rnd()<(biz?.8:.55)?1:0,tax:biz?(rnd()<.7?1:0):(rnd()<.15?1:0),m2,ver:rnd()<(biz?.45:.3)?1:0});
+DISTRICTS.forEach(d=>{const cnt=d.n*MULT;for(let i=0;i<cnt;i++){id++;
+  let use,ptype;const r1=rnd();
+  if(r1<0.08){use="land";ptype="土地";} else if(rnd()<d.biz){use="biz";ptype=pick(BIZ_T);} else {use="res";ptype=pick(RES_T);}
+  let deal = use==="land"?(rnd()<0.85?"sale":"rent"):(rnd()<0.30?"sale":"rent");
+  const m2 = use==="land"?ri(120,2000):(use==="biz"?ri(60,400):ri(28,260));
+  let price=0,saleP=0;
+  if(deal==="rent"){price = use==="biz"?Math.round((400+m2*rb(4,9))/50)*50:Math.round((180+m2*rb(3,7))/10)*10; price=Math.max(200,Math.min(3000,price));}
+  else {const ppm=use==="land"?rb(150,900):(use==="biz"?rb(1200,3000):rb(900,2400)); saleP=Math.round(m2*ppm/1000)*1000;}
+  const dep= deal==="rent"?(use==="biz"?pick([2,2,3,3]):pick([1,1,2])):0;
+  const fixed= (deal==="rent"&&use==="biz")?(rnd()<.6?1:0):0;
+  const term= deal==="sale"?"売買":(fixed?pick(["2年・固定","3年・固定","5年・固定"]):(use==="biz"?pick(["2年","3年"]):"1年"));
+  P.push({id,t:ptype+" "+m2+"㎡",ptype,dist:d.name,area:d.name+" / St."+ri(10,600),lat:d.lat+rb(-.02,.02),lng:d.lng+rb(-.022,.022),
+    use,deal,price,saleP,dep,term,fixed,meter:rnd()<(use==="land"?.2:.65)?1:0,tax:(use==="biz")?(rnd()<.7?1:0):(rnd()<.2?1:0),m2,ver:rnd()<(use==="biz"?.45:.3)?1:0});
 }});
-const COL={biz:"#0E7C86",res:"#1d4ed8",sale:"#F4A300"};
-const F={use:"all",priceMax:1e9,areaMin:0,depMax:9,ver:0,tax:0,meter:0,fixed:0};
+const COL={res:"#1d4ed8",biz:"#0E7C86",land:"#0E9F6E"};
+const F={deal:"all",use:"all",ptype:"all",priceMax:1e12,areaMin:0,ver:0,tax:0,meter:0,fixed:0};
+const LIST_CAP=80;
 let area=null,sortKey="rec";
-const map=L.map('map',{zoomControl:true}).setView([11.5520,104.9150],13);
+const map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([11.5520,104.9150],12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
 const drawn=new L.FeatureGroup().addTo(map);
-const cluster=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:55,
-  iconCreateFunction:c=>{const ms=c.getAllChildMarkers();const n=ms.length;const t={};
+const cluster=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:55,chunkedLoading:true,
+  iconCreateFunction:c=>{const ms=c.getAllChildMarkers();const n=c.getChildCount();const t={};
     ms.forEach(m=>{const k=m.p?m.p.dist:"";t[k]=(t[k]||0)+1;});let dist="",mx=0;for(const k in t){if(t[k]>mx){mx=t[k];dist=k;}}
-    const s=n<8?54:n<20?66:76;
+    const s=n<15?52:n<60?64:n<150?76:88;
     return L.divIcon({html:'<div class="cl" style="width:'+s+'px;height:'+s+'px;background:#0B2138"><span class="cn">'+n+'</span><span class="cd">'+dist+'</span></div>',className:'',iconSize:[s,s]});}
 }).addTo(map);
 const val=p=>p.deal==='sale'?p.saleP:p.price;
 function passFilter(p){
-  if(F.use==="biz"&&!(p.deal==="rent"&&p.type==="biz"))return false;
-  if(F.use==="res"&&!(p.deal==="rent"&&p.type==="res"))return false;
-  if(F.use==="sale"&&p.deal!=="sale")return false;
+  if(F.deal!=="all"&&p.deal!==F.deal)return false;
+  if(F.use!=="all"&&p.use!==F.use)return false;
+  if(F.ptype!=="all"&&p.ptype!==F.ptype)return false;
   if(val(p)>F.priceMax)return false;
   if(p.m2<F.areaMin)return false;
-  if(p.deal==="rent"&&p.dep>F.depMax)return false;
   if(F.ver&&!p.ver)return false;if(F.tax&&!p.tax)return false;if(F.meter&&!p.meter)return false;if(F.fixed&&!p.fixed)return false;
   return true;
 }
 function inArea(p){return area?turf.booleanPointInPolygon(turf.point([p.lng,p.lat]),area):true;}
+function visible(){return P.filter(p=>passFilter(p)&&inArea(p));}
 function sortVis(a){const k=sortKey;return a.sort((x,y)=>k==="pa"?val(x)-val(y):k==="pd"?val(y)-val(x):k==="ad"?y.m2-x.m2:((y.ver-x.ver)||(val(x)-val(y))));}
-function activeFlags(){return ["ver","tax","meter","fixed"].filter(k=>F[k]).length+(F.priceMax<1e9?1:0)+(F.areaMin>0?1:0)+(F.depMax<9?1:0);}
+function activeFlags(){return ["ver","tax","meter","fixed"].filter(k=>F[k]).length+(F.priceMax<1e12?1:0)+(F.areaMin>0?1:0)+(F.ptype!=="all"?1:0);}
 function countF(){return P.filter(passFilter).length;}
-function priceHTML(p){return p.deal==='sale'?('<div class="price">$'+p.saleP.toLocaleString()+'<small> 売買・総額</small></div>'):('<div class="price">$'+p.price+'<small> /月（最終・税別）</small></div>');}
-function render(){
-  let vis=P.filter(p=>passFilter(p)&&inArea(p)); sortVis(vis);
-  document.getElementById('cnt').textContent=vis.length;
-  const fc=activeFlags();document.getElementById('fcnt').textContent=fc?("("+fc+")"):"";
+function priceHTML(p){return p.deal==='sale'?('<div class="price">$'+p.saleP.toLocaleString()+'<small> 売買・総額</small></div>'):('<div class="price">$'+p.price.toLocaleString()+'<small> /月（最終・税別）</small></div>');}
+function renderMarkers(vis){
   cluster.clearLayers();
-  vis.forEach(p=>{const m=L.circleMarker([p.lat,p.lng],{radius:7,weight:2,color:'#fff',fillColor:COL[p.cat],fillOpacity:.95});m.p=p;
-    m.bindTooltip(p.t+" / "+(p.deal==='sale'?('$'+p.saleP.toLocaleString()+' 売買'):('$'+p.price+'/月')));
-    m.on('click',()=>{const el=document.getElementById('c'+p.id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid var(--amber)';setTimeout(()=>el.style.outline='',1200);}});cluster.addLayer(m);});
+  const arr=vis.map(p=>{const m=L.circleMarker([p.lat,p.lng],{radius:7,weight:p.deal==='sale'?3:2,color:p.deal==='sale'?'#F4A300':'#fff',fillColor:COL[p.use],fillOpacity:.95});m.p=p;
+    m.bindTooltip(p.ptype+" / "+(p.deal==='sale'?('$'+p.saleP.toLocaleString()+' 売買'):('$'+p.price.toLocaleString()+'/月')));
+    m.on('click',()=>{const el=document.getElementById('c'+p.id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid var(--amber)';setTimeout(()=>el.style.outline='',1200);}});return m;});
+  cluster.addLayers(arr);
+}
+function renderList(vis){
+  sortVis(vis);
+  document.getElementById('cnt').textContent=vis.length.toLocaleString();
+  const fc=activeFlags();document.getElementById('fcnt').textContent=fc?("("+fc+")"):"";
   const L2=document.getElementById('list');
   if(!vis.length){L2.innerHTML='<div class="empty">条件に合う物件がありません。<br>条件やエリアを調整してください。</div>';return;}
-  L2.innerHTML=vis.map(p=>`<div class="card" id="c${p.id}" onclick="focusP(${p.lat},${p.lng})">
-     <div class="thumb" style="background:${COL[p.cat]}">${p.use}</div>
-     <div><div class="badges">${p.deal==='sale'?'<span class="b sale">売買</span>':`<span class="b ${p.type}">${p.type==='biz'?'事業用':'住居'}</span>`}${p.ver?'<span class="b ver">検証済み</span>':''}</div>
+  const show=vis.slice(0,LIST_CAP);
+  L2.innerHTML=show.map(p=>`<div class="card" id="c${p.id}" onclick="focusP(${p.lat},${p.lng})">
+     <div class="thumb" style="background:${COL[p.use]}">${p.ptype}</div>
+     <div><div class="badges"><span class="b ${p.deal}">${p.deal==='sale'?'売買':'賃貸'}</span><span class="b ${p.use}">${p.use==='res'?'住居':p.use==='biz'?'事業用':'土地'}</span>${p.ver?'<span class="b ver">検証済み</span>':''}</div>
        <p class="ttl">${p.t}</p><p class="addr">${p.area} ・ ${p.m2}㎡</p>
        ${priceHTML(p)}
-       <div class="grid"><div class="kv"><span>${p.deal==='sale'?'㎡単価':'デポジット'}</span><b>${p.deal==='sale'?('$'+Math.round(p.saleP/p.m2)):(p.dep+'ヶ月')}</b></div><div class="kv"><span>${p.deal==='sale'?'取引':'契約'}</span><b>${p.deal==='sale'?'売買':p.term}</b></div>
-       <div class="kv"><span>メーター</span><b class="${p.meter?'yes':'no'}">${p.meter?'専用':'共用'}</b></div><div class="kv"><span>税ｲﾝﾎﾞｲｽ</span><b class="${p.tax?'yes':'no'}">${p.tax?'発行可':'不可'}</b></div></div>
-     </div></div>`).join('');
+       <div class="grid"><div class="kv"><span>${p.deal==='sale'?'㎡単価':'デポジット'}</span><b>${p.deal==='sale'?('$'+Math.round(p.saleP/p.m2).toLocaleString()):(p.dep+'ヶ月')}</b></div><div class="kv"><span>${p.deal==='sale'?'取引':'契約'}</span><b>${p.term}</b></div>
+       <div class="kv"><span>メーター</span><b class="${p.meter?'yes':'no'}">${p.meter?'専用':'共用'}</b></div><div class="kv"><span>税ｲﾝﾎﾞｲｽ</span><b class="${p.tax?'yes':'no'}">${p.tax?'可':'不可'}</b></div></div>
+     </div></div>`).join('') + (vis.length>LIST_CAP?('<div class="more">＋他 '+(vis.length-LIST_CAP).toLocaleString()+' 件は地図で確認</div>'):'');
 }
+function render(){const vis=visible();renderMarkers(vis);renderList(vis.slice());}
 function focusP(lat,lng){map.setView([lat,lng],16,{animate:true});}window.focusP=focusP;
-document.getElementById('sort').onchange=e=>{sortKey=e.target.value;render();document.getElementById('list').scrollTop=0;};
-document.getElementById('seg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#seg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');F.use=b.dataset.u;document.querySelectorAll('#fUse .opt').forEach(o=>o.classList.toggle('on',o.dataset.u===F.use));render();});
+document.getElementById('sort').onchange=e=>{sortKey=e.target.value;renderList(visible());document.getElementById('list').scrollTop=0;};
+document.getElementById('segDeal').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#segDeal button').forEach(x=>x.classList.remove('on'));b.classList.add('on');F.deal=b.dataset.deal;syncOpt('fDeal','deal',F.deal);render();});
+document.getElementById('segUse').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#segUse button').forEach(x=>x.classList.remove('on'));b.classList.add('on');F.use=b.dataset.use;syncOpt('fUse','use',F.use);render();});
+function syncOpt(id,attr,v){document.querySelectorAll('#'+id+' .opt').forEach(o=>o.classList.toggle('on',o.dataset[attr]===v));}
 
 let fh=false,pts=[],line=null;const el=map.getContainer();
 function setFH(on){fh=on;const b=document.getElementById('fhBtn');b.classList.toggle('on',on);b.textContent=on?"✍ なぞって描く（ドラッグ）":"✍ 指でなぞって囲む";document.getElementById('tip').style.display=on?'block':'none';if(on){map.dragging.disable();map.doubleClickZoom.disable();el.style.cursor='crosshair';el.style.touchAction='none';}else{map.dragging.enable();map.doubleClickZoom.enable();el.style.cursor='';el.style.touchAction='';}}
@@ -189,7 +207,7 @@ el.addEventListener('pointerdown',e=>{if(!fh)return;e.preventDefault();pts=[ll(e
 el.addEventListener('pointermove',e=>{if(!fh||!pts.length)return;e.preventDefault();pts.push(ll(e));if(line)drawn.removeLayer(line);line=L.polyline(pts,{color:'#F4A300',weight:4}).addTo(drawn);},{passive:false});
 el.addEventListener('pointerup',e=>{if(!fh||!pts.length)return;finishFH();},{passive:false});
 function finishFH(){if(pts.length<3){pts=[];setFH(false);return;}drawn.clearLayers();L.polygon(pts,{color:'#F4A300',weight:3,fillOpacity:.08}).addTo(drawn);const c=pts.map(p=>[p.lng,p.lat]);c.push(c[0]);area=turf.polygon([c]);pts=[];setFH(false);document.getElementById('clearBtn').style.display='block';render();}
-window.__demoDraw=function(){const cp=map.latLngToContainerPoint([11.5460,104.9190]);const r=140,n=26,lls=[];for(let i=0;i<=n;i++){const a=i/n*2*Math.PI;lls.push(map.containerPointToLatLng([cp.x+r*Math.cos(a),cp.y+r*Math.sin(a)*0.85]));}drawn.clearLayers();L.polygon(lls,{color:'#F4A300',weight:3,fillOpacity:.08}).addTo(drawn);const c=lls.map(p=>[p.lng,p.lat]);c.push(c[0]);area=turf.polygon([c]);document.getElementById('clearBtn').style.display='block';render();};
+window.__demoDraw=function(){const cp=map.latLngToContainerPoint([11.5460,104.9190]);const r=150,n=26,lls=[];for(let i=0;i<=n;i++){const a=i/n*2*Math.PI;lls.push(map.containerPointToLatLng([cp.x+r*Math.cos(a),cp.y+r*Math.sin(a)*0.85]));}drawn.clearLayers();L.polygon(lls,{color:'#F4A300',weight:3,fillOpacity:.08}).addTo(drawn);const c=lls.map(p=>[p.lng,p.lat]);c.push(c[0]);area=turf.polygon([c]);document.getElementById('clearBtn').style.display='block';render();};
 document.getElementById('fhBtn').onclick=()=>setFH(!fh);
 document.getElementById('demoBtn').onclick=()=>window.__demoDraw();
 document.getElementById('clearBtn').onclick=()=>{drawn.clearLayers();area=null;document.getElementById('clearBtn').style.display='none';render();};
@@ -197,15 +215,19 @@ document.getElementById('clearBtn').onclick=()=>{drawn.clearLayers();area=null;d
 const scrim=document.getElementById('scrim'),fd=document.getElementById('filter');
 function openF(){updateApplyCnt();fd.classList.add('open');scrim.classList.add('open');}function closeF(){fd.classList.remove('open');scrim.classList.remove('open');}
 document.getElementById('openFilter').onclick=openF;scrim.onclick=closeF;
-document.getElementById('fUse').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;document.querySelectorAll('#fUse .opt').forEach(x=>x.classList.remove('on'));o.classList.add('on');F.use=o.dataset.u;document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.u===F.use));updateApplyCnt();});
-document.getElementById('fDep').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;document.querySelectorAll('#fDep .opt').forEach(x=>x.classList.remove('on'));o.classList.add('on');F.depMax=+o.dataset.d;updateApplyCnt();});
+document.getElementById('fDeal').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;F.deal=o.dataset.deal;syncOpt('fDeal','deal',F.deal);document.querySelectorAll('#segDeal button').forEach(b=>b.classList.toggle('on',b.dataset.deal===F.deal));updateApplyCnt();});
+document.getElementById('fUse').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;F.use=o.dataset.use;syncOpt('fUse','use',F.use);document.querySelectorAll('#segUse button').forEach(b=>b.classList.toggle('on',b.dataset.use===F.use));updateApplyCnt();});
+document.getElementById('fType').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;F.ptype=o.dataset.t;syncOpt('fType','t',F.ptype);updateApplyCnt();});
 document.getElementById('fFlags').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;o.classList.toggle('on');F[o.dataset.k]=o.classList.contains('on')?1:0;updateApplyCnt();});
-const fp=document.getElementById('fPrice');fp.oninput=()=>{const v=+fp.value;F.priceMax=v>=100?1e9:(v<=26?v*100:(2600+(v-26)*( (520000-2600)/(100-26) )));document.getElementById('fPriceV').textContent=v>=100?"上限なし":(F.priceMax<3000?("月$"+Math.round(F.priceMax)):("総額$"+Math.round(F.priceMax/1000)+"k"));updateApplyCnt();};
+const fp=document.getElementById('fPrice');fp.oninput=()=>{const v=+fp.value;F.priceMax=v>=100?1e12:(v<=30?v*100:(3000+(v-30)*((900000-3000)/70)));document.getElementById('fPriceV').textContent=v>=100?"上限なし":(F.priceMax<3500?("月$"+Math.round(F.priceMax).toLocaleString()):("総額$"+Math.round(F.priceMax/1000)+"k"));updateApplyCnt();};
 const fa=document.getElementById('fArea');fa.oninput=()=>{F.areaMin=+fa.value;document.getElementById('fAreaV').textContent=(+fa.value===0)?"指定なし":(fa.value+"㎡〜");updateApplyCnt();};
-function updateApplyCnt(){document.getElementById('fApplyCnt').textContent=countF();}
+function updateApplyCnt(){document.getElementById('fApplyCnt').textContent=countF().toLocaleString();}
 document.getElementById('fApply').onclick=()=>{closeF();render();};
 document.getElementById('fClear').onclick=()=>resetAll();document.getElementById('resetAll').onclick=()=>resetAll();
-function resetAll(){F.use="all";F.priceMax=1e9;F.areaMin=0;F.depMax=9;F.ver=F.tax=F.meter=F.fixed=0;document.querySelectorAll('#fUse .opt').forEach(o=>o.classList.toggle('on',o.dataset.u==="all"));document.querySelectorAll('#fDep .opt').forEach(o=>o.classList.toggle('on',o.dataset.d==="9"));document.querySelectorAll('#fFlags .opt').forEach(o=>o.classList.remove('on'));document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.u==="all"));fp.value=100;document.getElementById('fPriceV').textContent="上限なし";fa.value=0;document.getElementById('fAreaV').textContent="指定なし";updateApplyCnt();render();}
+function resetAll(){F.deal="all";F.use="all";F.ptype="all";F.priceMax=1e12;F.areaMin=0;F.ver=F.tax=F.meter=F.fixed=0;
+  syncOpt('fDeal','deal','all');syncOpt('fUse','use','all');syncOpt('fType','t','all');document.querySelectorAll('#fFlags .opt').forEach(o=>o.classList.remove('on'));
+  document.querySelectorAll('#segDeal button').forEach(b=>b.classList.toggle('on',b.dataset.deal==="all"));document.querySelectorAll('#segUse button').forEach(b=>b.classList.toggle('on',b.dataset.use==="all"));
+  fp.value=100;document.getElementById('fPriceV').textContent="上限なし";fa.value=0;document.getElementById('fAreaV').textContent="指定なし";updateApplyCnt();render();}
 render();updateApplyCnt();
 </script>
 </body>
