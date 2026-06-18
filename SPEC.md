@@ -16,6 +16,7 @@
 | 種別 | URL / パス |
 |---|---|
 | ライブ（スマホで開ける） | https://umagon-g.github.io/kh-property-proto/ |
+| デモ動画（v0.7・25秒） | https://drive.google.com/file/d/1I3Fx2eobjH6-4k59wNFIUgpVDl_x4ZhZ/view |
 | GitHub リポジトリ（正本） | https://github.com/Umagon-G/kh-property-proto |
 | 設計書（このファイル） | リポジトリ直下 `SPEC.md` |
 | 配信方式 | GitHub Pages（`main` ブランチ root の `index.html`）。push すると自動再ビルド（1〜2分） |
