@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>KH Property — 指でなぞって囲って探す（proto v0.6.1）</title>
+<title>KH Property — 指でなぞって囲って探す（proto v0.7）</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <style>
@@ -35,8 +35,8 @@
   .legend{position:absolute;z-index:1100;top:12px;right:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;box-shadow:0 4px 12px rgba(11,33,56,.15)}
   .legend div{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:11px;font-weight:700;color:var(--ink)}
   .legend i{width:11px;height:11px;border-radius:50%;display:inline-block} .legend i.ring{background:#fff;border:2px solid var(--amber)}
-  .cl{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:50%;color:#fff;border:3px solid rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(11,33,56,.35);line-height:1}
-  .cl .cn{font-weight:800;font-size:17px} .cl .cd{font-size:9px;opacity:.92;margin-top:2px;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cl{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:50%;color:#fff;border:1.5px solid rgba(255,255,255,.7);box-shadow:0 1px 4px rgba(11,33,56,.25);line-height:1;backdrop-filter:saturate(1.1)}
+  .cl .cn{font-weight:800;font-size:13px} .cl .cd{font-size:7.5px;opacity:.95;margin-top:1px;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #sheet{flex:0 0 auto;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(11,33,56,.1);max-height:46dvh;display:flex;flex-direction:column;min-height:0}
   .sheet-h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);gap:8px;flex:0 0 auto}
   .sheet-h b{font-size:15px} .sheet-h .cnt{color:var(--teal);font-weight:800}
@@ -78,7 +78,7 @@
 <div id="app">
   <div id="left">
     <header>
-      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す（proto v0.6.1）</small></div>
+      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す（proto v0.7）</small></div>
       <div class="segline"><span class="sl">取引</span><div class="seg" id="segDeal"><button data-deal="all" class="on">すべて</button><button data-deal="rent">賃貸</button><button data-deal="sale">売買</button></div><span class="multi">複数選択OK</span></div>
       <div class="segline"><span class="sl">用途</span><div class="seg" id="segUse"><button data-use="all" class="on">すべて</button><button data-use="res">住居</button><button data-use="biz">事業用</button><button data-use="land">土地</button></div><span class="multi">複数選択OK</span></div>
       <div class="toolrow"><button class="tbtn" id="openFilter">⚙ 絞り込み <span class="n" id="fcnt"></span></button><button class="tbtn" id="resetAll">条件クリア</button></div>
@@ -89,7 +89,7 @@
         <select id="sort"><option value="rec">おすすめ順</option><option value="pa">価格が安い順</option><option value="pd">価格が高い順</option><option value="ad">面積が広い順</option></select>
       </div>
       <div class="list" id="list"></div>
-      <div class="note">※ proto v0.6.1：物件=ランダム約1,500件のサンプル。地図=OpenStreetMap（後でGoogleマップ可）。Khmer24準拠＝取引(賃貸/売買)×用途(住居/事業用/土地)の2軸。円＝行政区域の件数。</div>
+      <div class="note">※ proto v0.7：物件=ランダム約1,500件のサンプル。地図=OpenStreetMap（後でGoogleマップ可）。Khmer24準拠＝取引(賃貸/売買)×用途(住居/事業用/土地)の2軸。円＝行政区域の件数。</div>
     </div>
   </div>
   <div id="mapwrap">
@@ -121,11 +121,16 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 const rnd=mulberry32(20260618);
 const rb=(a,b)=>a+rnd()*(b-a), ri=(a,b)=>Math.floor(rb(a,b+0.999)), pick=a=>a[Math.floor(rnd()*a.length)];
 const DISTRICTS=[
- {name:"BKK1",lat:11.5490,lng:104.9220,n:18,biz:.45},{name:"Chamkarmon",lat:11.5420,lng:104.9180,n:16,biz:.45},
- {name:"Toul Tom Poung",lat:11.5380,lng:104.9150,n:14,biz:.4},{name:"Tonle Bassac",lat:11.5540,lng:104.9290,n:12,biz:.35},
- {name:"Daun Penh",lat:11.5710,lng:104.9230,n:12,biz:.5},{name:"Toul Kork",lat:11.5720,lng:104.9000,n:11,biz:.3},
- {name:"BKK3",lat:11.5450,lng:104.9170,n:9,biz:.4},{name:"Sen Sok",lat:11.5980,lng:104.8850,n:9,biz:.4},
- {name:"Mean Chey",lat:11.5170,lng:104.9230,n:7,biz:.55},{name:"Chroy Changvar",lat:11.5870,lng:104.9300,n:8,biz:.3},
+ {name:"BKK1",lat:11.5490,lng:104.9220,n:18,biz:.45,sk:["Wat Lanka","Independence Monument","Bassac Lane"]},
+ {name:"Chamkarmon",lat:11.5420,lng:104.9180,n:16,biz:.45,sk:["Tonle Bassac","Olympic","Phsar Daeum Thkov"]},
+ {name:"Toul Tom Poung",lat:11.5380,lng:104.9150,n:14,biz:.4,sk:["Russian Market","Toul Tumpung 1","Toul Tumpung 2"]},
+ {name:"Tonle Bassac",lat:11.5540,lng:104.9290,n:12,biz:.35,sk:["Koh Pich","Bassac Riverside","Phsar Tonle Bassac"]},
+ {name:"Daun Penh",lat:11.5710,lng:104.9230,n:12,biz:.5,sk:["Riverside","Srah Chak","Phsar Thmei"]},
+ {name:"Toul Kork",lat:11.5720,lng:104.9000,n:11,biz:.3,sk:["Boeung Kak 2","Phsar Depou","Tuek L'ak 1"]},
+ {name:"BKK3",lat:11.5450,lng:104.9170,n:9,biz:.4,sk:["Phsar BKK3","Mao Tse Tung","Monireth"]},
+ {name:"Sen Sok",lat:11.5980,lng:104.8850,n:9,biz:.4,sk:["Phnom Penh Thmei","Tuek Thla","Ou Baek K'am"]},
+ {name:"Mean Chey",lat:11.5170,lng:104.9230,n:7,biz:.55,sk:["Stung Mean Chey","Boeung Tumpun","Chak Angre Krom"]},
+ {name:"Chroy Changvar",lat:11.5870,lng:104.9300,n:8,biz:.3,sk:["Preaek Lieb","Bay Damram","National Road 6A"]},
 ];
 const MULT=15;
 const RES_T=["一軒家","ヴィラ","アパート","コンド","スタジオ"], BIZ_T=["オフィス","店舗","ショップハウス","倉庫"];
@@ -141,7 +146,7 @@ DISTRICTS.forEach(d=>{const cnt=d.n*MULT;for(let i=0;i<cnt;i++){id++;
   const dep= deal==="rent"?(use==="biz"?pick([2,2,3,3]):pick([1,1,2])):0;
   const fixed= (deal==="rent"&&use==="biz")?(rnd()<.6?1:0):0;
   const term= deal==="sale"?"売買":(fixed?pick(["2年・固定","3年・固定","5年・固定"]):(use==="biz"?pick(["2年","3年"]):"1年"));
-  P.push({id,t:ptype+" "+m2+"㎡",ptype,dist:d.name,area:d.name+" / St."+ri(10,600),lat:d.lat+rb(-.02,.02),lng:d.lng+rb(-.022,.022),
+  P.push({id,t:ptype+" "+m2+"㎡",ptype,dist:d.name,area:d.name+" ・ "+pick(d.sk)+" ・ St."+ri(10,600),lat:d.lat+rb(-.02,.02),lng:d.lng+rb(-.022,.022),
     use,deal,price,saleP,dep,term,fixed,meter:rnd()<(use==="land"?.2:.65)?1:0,tax:(use==="biz")?(rnd()<.7?1:0):(rnd()<.2?1:0),m2,ver:rnd()<(use==="biz"?.45:.3)?1:0});
 }});
 const COL={res:"#1d4ed8",biz:"#0E7C86",land:"#0E9F6E"};
@@ -155,8 +160,8 @@ const drawn=new L.FeatureGroup().addTo(map);
 const cluster=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:55,chunkedLoading:true,
   iconCreateFunction:c=>{const ms=c.getAllChildMarkers();const n=c.getChildCount();const t={};
     ms.forEach(m=>{const k=m.p?m.p.dist:"";t[k]=(t[k]||0)+1;});let dist="",mx=0;for(const k in t){if(t[k]>mx){mx=t[k];dist=k;}}
-    const s=n<15?52:n<60?64:n<150?76:88;
-    return L.divIcon({html:'<div class="cl" style="width:'+s+'px;height:'+s+'px;background:#0B2138"><span class="cn">'+n+'</span><span class="cd">'+dist+'</span></div>',className:'',iconSize:[s,s]});}
+    const s=n<15?34:n<60?42:n<150?50:58;
+    return L.divIcon({html:'<div class="cl" style="width:'+s+'px;height:'+s+'px;background:rgba(11,33,56,.78)"><span class="cn">'+n+'</span><span class="cd">'+dist+'</span></div>',className:'',iconSize:[s,s]});}
 }).addTo(map);
 const val=p=>p.deal==='sale'?p.saleP:p.price;
 function passFilter(p){
