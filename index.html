@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>KH Property — 指でなぞって囲って探す（proto v0.2）</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{--navy:#0B2138;--teal:#0E7C86;--amber:#F4A300;--ink:#1E293B;--mute:#64748B;
+        --line:#E2E8F0;--panel:#F1F5F9;--ok:#0E9F6E;--bad:#C0263A;--white:#fff;}
+  *{box-sizing:border-box} html,body{margin:0;height:100%;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;color:var(--ink)}
+  #app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{background:var(--navy);color:#fff;padding:10px 14px;flex:0 0 auto;z-index:1200}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:17px}
+  .brand .dot{width:10px;height:18px;background:var(--amber);border-radius:2px}
+  .brand small{font-weight:500;color:#9FB3C8;font-size:11px;margin-left:6px}
+  .seg{display:flex;gap:0;margin-top:9px;background:#12304a;border-radius:10px;padding:3px;width:max-content}
+  .seg button{border:none;background:transparent;color:#cfe0ee;font-weight:800;font-size:13px;padding:7px 16px;border-radius:8px;cursor:pointer}
+  .seg button.on{background:var(--amber);color:#1a1a1a}
+  .toolrow{display:flex;gap:8px;margin-top:9px;align-items:center}
+  .tbtn{border:1px solid #2b4258;background:#12304a;color:#cfe0ee;border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .tbtn .n{color:var(--amber)}
+  #mapwrap{position:relative;flex:1 1 auto;min-height:0}
+  #map{position:absolute;inset:0}
+  .fab{position:absolute;z-index:1100;border:none;border-radius:999px;font-weight:800;box-shadow:0 6px 18px rgba(11,33,56,.3);cursor:pointer}
+  #fhBtn{left:50%;transform:translateX(-50%);bottom:14px;background:var(--teal);color:#fff;padding:14px 22px;font-size:15px}
+  #fhBtn.on{background:var(--amber);color:#1a1a1a}
+  #demoBtn{right:12px;bottom:14px;background:#fff;color:var(--navy);border:1px solid var(--line)!important;padding:11px 14px;font-size:13px}
+  #clearBtn{left:12px;bottom:14px;background:#fff;color:var(--bad);border:1px solid var(--line)!important;padding:11px 14px;font-size:13px;display:none}
+  .tip{position:absolute;z-index:1100;left:50%;transform:translateX(-50%);top:12px;background:rgba(11,33,56,.92);color:#fff;
+       padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;display:none}
+  #sheet{flex:0 0 auto;background:#fff;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(11,33,56,.1);max-height:46dvh;display:flex;flex-direction:column}
+  .sheet-h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+  .sheet-h b{font-size:15px} .sheet-h .cnt{color:var(--teal);font-weight:800}
+  .sheet-h .hint{color:var(--mute);font-size:12px}
+  .list{overflow:auto;padding:10px 12px;display:grid;grid-template-columns:1fr;gap:10px}
+  .card{display:grid;grid-template-columns:84px 1fr;gap:11px;border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;background:#fff}
+  .thumb{width:84px;height:84px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;text-align:center;line-height:1.2}
+  .ttl{font-weight:800;font-size:14px;margin:0 0 3px} .addr{color:var(--mute);font-size:11.5px;margin:0 0 5px}
+  .badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+  .b{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 7px}
+  .b.biz{background:#e7eefc;color:#1d4ed8} .b.res{background:#eafaf1;color:#0e9f6e}
+  .b.ver{background:#fff4d6;color:#9a6700} .b.ver::before{content:"✓ "}
+  .price{font-weight:900;font-size:18px;color:var(--navy)} .price small{font-size:11px;color:var(--mute);font-weight:700}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin-top:5px}
+  .kv{font-size:11.5px;display:flex;justify-content:space-between;border-bottom:1px dotted #e7ecf2;padding:1px 0}
+  .kv span:first-child{color:var(--mute)} .kv b{font-weight:800}
+  .yes{color:var(--ok)} .no{color:var(--bad)}
+  .empty{color:var(--mute);text-align:center;padding:26px 10px;font-size:13px}
+  .note{font-size:10.5px;color:var(--mute);padding:6px 14px;background:var(--panel)}
+  /* filter drawer */
+  #scrim{position:fixed;inset:0;background:rgba(11,33,56,.45);z-index:1300;display:none}
+  #filter{position:fixed;z-index:1400;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;padding:16px 18px 20px;
+          box-shadow:0 -10px 30px rgba(11,33,56,.25);transform:translateY(100%);transition:transform .22s;max-height:80dvh;overflow:auto}
+  #filter.open{transform:translateY(0)} #scrim.open{display:block}
+  #filter h3{margin:2px 0 12px;font-size:17px}
+  .frow{margin-bottom:15px} .frow label{font-size:13px;font-weight:800;color:var(--ink);display:block;margin-bottom:7px}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .opt{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink)}
+  .opt.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .rng{display:flex;align-items:center;gap:10px} .rng input[type=range]{flex:1}
+  .rngval{font-weight:800;color:var(--teal);min-width:78px;text-align:right;font-size:14px}
+  .applybar{display:flex;gap:10px;margin-top:6px}
+  .applybar .clr{flex:0 0 auto;background:#fff;border:1px solid var(--line);color:var(--mute);border-radius:10px;padding:13px 16px;font-weight:800;cursor:pointer}
+  .applybar .ap{flex:1;background:var(--teal);border:none;color:#fff;border-radius:10px;padding:13px;font-weight:800;font-size:15px;cursor:pointer}
+  @media(min-width:880px){
+    #app{flex-direction:row}
+    #left{flex:0 0 430px;display:flex;flex-direction:column;border-right:1px solid var(--line);height:100dvh}
+    header{order:0} #sheet{order:1;flex:1 1 auto;max-height:none;border-top:none} #mapwrap{order:2;flex:1 1 auto}
+    #filter{left:auto;right:auto;width:430px;border-radius:0}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="left">
+    <header>
+      <div class="brand"><span class="dot"></span>KH Property <small>指でなぞって囲って探す・全条件が最初から出る（proto v0.2）</small></div>
+      <div class="seg" id="seg">
+        <button data-u="all" class="on">すべて</button>
+        <button data-u="biz">事業用</button>
+        <button data-u="res">住居</button>
+      </div>
+      <div class="toolrow">
+        <button class="tbtn" id="openFilter">⚙ 絞り込み <span class="n" id="fcnt"></span></button>
+        <button class="tbtn" id="resetAll">条件クリア</button>
+      </div>
+    </header>
+    <div id="sheet">
+      <div class="sheet-h"><div><b>物件</b> <span class="cnt" id="cnt">0</span> 件</div><div class="hint" id="hint">地図を指でなぞって囲む</div></div>
+      <div class="list" id="list"></div>
+      <div class="note">※ proto v0.2：地図=OpenStreetMap（後でGoogleマップ可）／物件=サンプル。価格は最終条件（"negotiable"なし）。</div>
+    </div>
+  </div>
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div class="tip" id="tip">指でなぞって輪を描いてください ✍</div>
+    <button class="fab" id="fhBtn">✍ 指でなぞって囲む</button>
+    <button class="fab" id="demoBtn">デモエリア</button>
+    <button class="fab" id="clearBtn">✕ エリア解除</button>
+  </div>
+</div>
+
+<!-- filter drawer -->
+<div id="scrim"></div>
+<div id="filter">
+  <h3>絞り込み条件</h3>
+  <div class="frow"><label>用途</label><div class="opts" id="fUse">
+    <div class="opt on" data-u="all">すべて</div><div class="opt" data-u="biz">事業用</div><div class="opt" data-u="res">住居</div></div></div>
+  <div class="frow"><label>家賃の上限（USD/月）</label>
+    <div class="rng"><input type="range" id="fPrice" min="200" max="2500" step="50" value="2500"><span class="rngval" id="fPriceV">上限なし</span></div></div>
+  <div class="frow"><label>専有面積の最低（㎡）</label>
+    <div class="rng"><input type="range" id="fArea" min="0" max="350" step="10" value="0"><span class="rngval" id="fAreaV">指定なし</span></div></div>
+  <div class="frow"><label>デポジット上限</label><div class="opts" id="fDep">
+    <div class="opt on" data-d="9">指定なし</div><div class="opt" data-d="1">1ヶ月</div><div class="opt" data-d="2">2ヶ月以下</div><div class="opt" data-d="3">3ヶ月以下</div></div></div>
+  <div class="frow"><label>こだわり条件</label><div class="opts" id="fFlags">
+    <div class="opt" data-k="ver">✓ 検証済み</div><div class="opt" data-k="tax">税インボイス可</div>
+    <div class="opt" data-k="meter">専用メーター</div><div class="opt" data-k="fixed">賃料固定</div></div></div>
+  <div class="applybar"><button class="clr" id="fClear">クリア</button><button class="ap" id="fApply">この条件で見る（<span id="fApplyCnt">0</span>件）</button></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<script>
+const P=[
+ {id:1,t:"オフィス＋倉庫ヴィラ E0",area:"Chamkarmon / St.472",lat:11.5436,lng:104.9105,type:"biz",use:"倉庫付事業",price:900,dep:3,term:"3年・固定",fixed:1,meter:1,tax:1,m2:120,ver:1},
+ {id:2,t:"ショップハウス 1F",area:"BKK1 / St.51",lat:11.5512,lng:104.9230,type:"biz",use:"店舗",price:1500,dep:2,term:"2年・固定",fixed:1,meter:1,tax:1,m2:80,ver:1},
+ {id:3,t:"サービスアパート 2BR",area:"BKK1 / St.308",lat:11.5470,lng:104.9215,type:"res",use:"住居",price:650,dep:1,term:"1年",fixed:0,meter:0,tax:0,m2:65,ver:0},
+ {id:4,t:"倉庫 350㎡ 道路付",area:"Toul Tom Poung / St.155",lat:11.5390,lng:104.9165,type:"biz",use:"倉庫",price:1800,dep:3,term:"5年・固定",fixed:1,meter:1,tax:1,m2:350,ver:1},
+ {id:5,t:"コンド 1BR 高層",area:"Tonle Bassac / St.5",lat:11.5560,lng:104.9300,type:"res",use:"住居",price:520,dep:1,term:"1年",fixed:0,meter:1,tax:0,m2:48,ver:1},
+ {id:6,t:"オフィスフロア 200㎡",area:"Daun Penh / Monivong",lat:11.5705,lng:104.9210,type:"biz",use:"オフィス",price:2200,dep:2,term:"3年",fixed:0,meter:1,tax:1,m2:200,ver:0},
+ {id:7,t:"一軒家 3BR 庭付",area:"Chamkarmon / St.360",lat:11.5455,lng:104.9255,type:"res",use:"住居",price:900,dep:2,term:"2年",fixed:0,meter:1,tax:0,m2:160,ver:0},
+ {id:8,t:"カフェ向け区画",area:"BKK1 / St.278",lat:11.5495,lng:104.9190,type:"biz",use:"飲食",price:1200,dep:2,term:"3年・固定",fixed:1,meter:0,tax:1,m2:90,ver:1},
+ {id:9,t:"スタジオ 安価",area:"Toul Kork / St.337",lat:11.5720,lng:104.9000,type:"res",use:"住居",price:300,dep:1,term:"1年",fixed:0,meter:0,tax:0,m2:30,ver:0},
+ {id:10,t:"倉庫＋事務所",area:"Mean Chey / NR2",lat:11.5180,lng:104.9220,type:"biz",use:"倉庫付事業",price:1100,dep:3,term:"5年・固定",fixed:1,meter:1,tax:1,m2:280,ver:1},
+ {id:11,t:"コンド 2BR 家具付",area:"Tonle Bassac / St.21",lat:11.5520,lng:104.9280,type:"res",use:"住居",price:780,dep:1,term:"1年",fixed:0,meter:1,tax:0,m2:72,ver:1},
+ {id:12,t:"路面店 角地",area:"Chamkarmon / Mao Tse Toung",lat:11.5410,lng:104.9200,type:"biz",use:"店舗",price:1600,dep:2,term:"3年",fixed:0,meter:1,tax:1,m2:110,ver:0},
+ {id:13,t:"アパート 1BR",area:"BKK3 / St.63",lat:11.5450,lng:104.9170,type:"res",use:"住居",price:420,dep:1,term:"1年",fixed:0,meter:0,tax:0,m2:42,ver:0},
+ {id:14,t:"クリニック向け区画",area:"BKK1 / St.294",lat:11.5485,lng:104.9248,type:"biz",use:"医療",price:1900,dep:3,term:"5年・固定",fixed:1,meter:1,tax:1,m2:140,ver:1},
+ {id:15,t:"ヴィラ 4BR プール",area:"Chamkarmon / St.426",lat:11.5375,lng:104.9230,type:"res",use:"住居",price:1700,dep:2,term:"2年",fixed:0,meter:1,tax:0,m2:300,ver:0},
+ {id:16,t:"小型倉庫 道路接面",area:"Toul Tom Poung / St.163",lat:11.5360,lng:104.9140,type:"biz",use:"倉庫",price:850,dep:2,term:"3年・固定",fixed:1,meter:1,tax:1,m2:150,ver:1},
+ {id:17,t:"オフィス 80㎡ 新築",area:"BKK1 / St.57",lat:11.5505,lng:104.9258,type:"biz",use:"オフィス",price:1300,dep:2,term:"3年・固定",fixed:1,meter:1,tax:1,m2:80,ver:1},
+ {id:18,t:"コンド 1BR 駅近",area:"Daun Penh / St.13",lat:11.5750,lng:104.9270,type:"res",use:"住居",price:600,dep:1,term:"1年",fixed:0,meter:1,tax:0,m2:50,ver:0},
+];
+const COL={biz:"#0E7C86",res:"#1d4ed8"};
+const F={use:"all",priceMax:9999,areaMin:0,depMax:9,ver:0,tax:0,meter:0,fixed:0};
+let area=null, markers={};
+const map=L.map('map',{zoomControl:true}).setView([11.5530,104.9180],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+const drawn=new L.FeatureGroup().addTo(map);
+
+function passFilter(p){
+  if(F.use!=="all"&&p.type!==F.use)return false;
+  if(p.price>F.priceMax)return false;
+  if(p.m2<F.areaMin)return false;
+  if(p.dep>F.depMax)return false;
+  if(F.ver&&!p.ver)return false;
+  if(F.tax&&!p.tax)return false;
+  if(F.meter&&!p.meter)return false;
+  if(F.fixed&&!p.fixed)return false;
+  return true;
+}
+function inArea(p){
+  if(!area)return true;
+  return turf.booleanPointInPolygon(turf.point([p.lng,p.lat]),area);
+}
+function activeFlags(){return ["ver","tax","meter","fixed"].filter(k=>F[k]).length + (F.priceMax<9999?1:0) + (F.areaMin>0?1:0) + (F.depMax<9?1:0);}
+function countF(){return P.filter(passFilter).length;}
+function render(){
+  const vis=P.filter(p=>passFilter(p)&&inArea(p));
+  document.getElementById('cnt').textContent=vis.length;
+  document.getElementById('hint').textContent=area?"囲ったエリア内":"地図を指でなぞって囲む";
+  const fc=activeFlags(); document.getElementById('fcnt').textContent=fc?("("+fc+")"):"";
+  P.forEach(p=>{
+    const show=passFilter(p)&&inArea(p);
+    if(!markers[p.id]){markers[p.id]=L.circleMarker([p.lat,p.lng],{radius:8,weight:2,color:'#fff'}).addTo(map);
+      markers[p.id].on('click',()=>{const el=document.getElementById('c'+p.id);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid var(--amber)';setTimeout(()=>el.style.outline='',1200);}});}
+    markers[p.id].setStyle({fillColor:COL[p.type],fillOpacity:show?0.95:0.1,opacity:show?1:0.12});
+    markers[p.id].bindTooltip(p.t+" / $"+p.price);
+  });
+  const L2=document.getElementById('list');
+  if(!vis.length){L2.innerHTML='<div class="empty">条件に合う物件がありません。<br>条件やエリアを調整してください。</div>';return;}
+  L2.innerHTML=vis.map(p=>`
+   <div class="card" id="c${p.id}" onclick="focusP(${p.lat},${p.lng})">
+     <div class="thumb" style="background:${COL[p.type]}">${p.use}</div>
+     <div>
+       <div class="badges"><span class="b ${p.type}">${p.type==='biz'?'事業用':'住居'}</span>${p.ver?'<span class="b ver">検証済み</span>':''}</div>
+       <p class="ttl">${p.t}</p><p class="addr">${p.area} ・ ${p.m2}㎡</p>
+       <div class="price">$${p.price}<small> /月（最終・税別）</small></div>
+       <div class="grid">
+         <div class="kv"><span>デポジット</span><b>${p.dep}ヶ月</b></div>
+         <div class="kv"><span>契約</span><b>${p.term}</b></div>
+         <div class="kv"><span>メーター</span><b class="${p.meter?'yes':'no'}">${p.meter?'専用':'共用'}</b></div>
+         <div class="kv"><span>税インボイス</span><b class="${p.tax?'yes':'no'}">${p.tax?'発行可':'不可'}</b></div>
+       </div>
+     </div>
+   </div>`).join('');
+}
+function focusP(lat,lng){map.setView([lat,lng],16,{animate:true});} window.focusP=focusP;
+
+// top segmented (用途)
+document.getElementById('seg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#seg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  F.use=b.dataset.u; syncPanelUse(); render();});
+function syncPanelUse(){document.querySelectorAll('#fUse .opt').forEach(o=>o.classList.toggle('on',o.dataset.u===F.use));}
+
+// ===== FREEHAND draw (touch + mouse via pointer events) =====
+let fh=false, pts=[], line=null;
+const el=map.getContainer();
+function setFH(on){fh=on;const b=document.getElementById('fhBtn');b.classList.toggle('on',on);
+  b.textContent=on?"✍ なぞって描く（ドラッグ）":"✍ 指でなぞって囲む";
+  document.getElementById('tip').style.display=on?'block':'none';
+  if(on){map.dragging.disable();map.doubleClickZoom.disable();el.style.cursor='crosshair';el.style.touchAction='none';}
+  else{map.dragging.enable();map.doubleClickZoom.enable();el.style.cursor='';el.style.touchAction='';}}
+function ll(e){const r=el.getBoundingClientRect();return map.containerPointToLatLng([e.clientX-r.left,e.clientY-r.top]);}
+el.addEventListener('pointerdown',e=>{if(!fh)return;e.preventDefault();pts=[ll(e)];if(line){drawn.removeLayer(line);line=null;}try{el.setPointerCapture(e.pointerId);}catch(_){}}, {passive:false});
+el.addEventListener('pointermove',e=>{if(!fh||!pts.length)return;e.preventDefault();pts.push(ll(e));if(line)drawn.removeLayer(line);line=L.polyline(pts,{color:'#F4A300',weight:4}).addTo(drawn);}, {passive:false});
+el.addEventListener('pointerup',e=>{if(!fh||!pts.length)return;finishFH();}, {passive:false});
+function finishFH(){if(pts.length<3){pts=[];setFH(false);return;}
+  drawn.clearLayers();L.polygon(pts,{color:'#F4A300',weight:3,fillOpacity:0.08}).addTo(drawn);
+  const c=pts.map(p=>[p.lng,p.lat]);c.push(c[0]);area=turf.polygon([c]);
+  pts=[];setFH(false);document.getElementById('clearBtn').style.display='block';render();}
+window.__demoDraw=function(){ // for screen-record demo: trace a loop programmatically
+  const center=map.latLngToContainerPoint([11.5440,104.9180]); const r=120, n=24, lls=[];
+  for(let i=0;i<=n;i++){const a=i/n*2*Math.PI;lls.push(map.containerPointToLatLng([center.x+r*Math.cos(a),center.y+r*Math.sin(a)*0.8]));}
+  drawn.clearLayers();L.polygon(lls,{color:'#F4A300',weight:3,fillOpacity:0.08}).addTo(drawn);
+  const c=lls.map(p=>[p.lng,p.lat]);c.push(c[0]);area=turf.polygon([c]);document.getElementById('clearBtn').style.display='block';render();};
+
+document.getElementById('fhBtn').onclick=()=>setFH(!fh);
+document.getElementById('demoBtn').onclick=()=>window.__demoDraw();
+document.getElementById('clearBtn').onclick=()=>{drawn.clearLayers();area=null;document.getElementById('clearBtn').style.display='none';render();};
+
+// ===== filter drawer =====
+const scrim=document.getElementById('scrim'),fd=document.getElementById('filter');
+function openF(){updateApplyCnt();fd.classList.add('open');scrim.classList.add('open');}
+function closeF(){fd.classList.remove('open');scrim.classList.remove('open');}
+document.getElementById('openFilter').onclick=openF; scrim.onclick=closeF;
+document.getElementById('fUse').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;document.querySelectorAll('#fUse .opt').forEach(x=>x.classList.remove('on'));o.classList.add('on');F.use=o.dataset.u;document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.u===F.use));updateApplyCnt();});
+document.getElementById('fDep').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;document.querySelectorAll('#fDep .opt').forEach(x=>x.classList.remove('on'));o.classList.add('on');F.depMax=+o.dataset.d;updateApplyCnt();});
+document.getElementById('fFlags').addEventListener('click',e=>{const o=e.target.closest('.opt');if(!o)return;o.classList.toggle('on');F[o.dataset.k]=o.classList.contains('on')?1:0;updateApplyCnt();});
+const fp=document.getElementById('fPrice');fp.oninput=()=>{const v=+fp.value;F.priceMax=v>=2500?9999:v;document.getElementById('fPriceV').textContent=v>=2500?"上限なし":("$"+v);updateApplyCnt();};
+const fa=document.getElementById('fArea');fa.oninput=()=>{F.areaMin=+fa.value;document.getElementById('fAreaV').textContent=(+fa.value===0)?"指定なし":(fa.value+"㎡〜");updateApplyCnt();};
+function updateApplyCnt(){document.getElementById('fApplyCnt').textContent=countF();}
+document.getElementById('fApply').onclick=()=>{closeF();render();};
+document.getElementById('fClear').onclick=()=>resetAll();
+document.getElementById('resetAll').onclick=()=>resetAll();
+function resetAll(){F.use="all";F.priceMax=9999;F.areaMin=0;F.depMax=9;F.ver=F.tax=F.meter=F.fixed=0;
+  document.querySelectorAll('#fUse .opt').forEach(o=>o.classList.toggle('on',o.dataset.u==="all"));
+  document.querySelectorAll('#fDep .opt').forEach(o=>o.classList.toggle('on',o.dataset.d==="9"));
+  document.querySelectorAll('#fFlags .opt').forEach(o=>o.classList.remove('on'));
+  document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.u==="all"));
+  fp.value=2500;document.getElementById('fPriceV').textContent="上限なし";fa.value=0;document.getElementById('fAreaV').textContent="指定なし";
+  updateApplyCnt();render();}
+render();updateApplyCnt();
+</script>
+</body>
+</html>
